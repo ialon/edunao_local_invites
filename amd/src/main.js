@@ -1,9 +1,10 @@
 define([
     'jquery',
     'core/ajax',
+    'core/notification',
     'core/templates',
     'core/str',
-], function($, Ajax, Templates, str) {
+], function($, Ajax, Notification, Templates, Str) {
     return {
         init: function(courseID, inviteBody) {
             this.courseID = courseID;
@@ -82,6 +83,8 @@ define([
             let userEmails = inviteModal.querySelector('#userEmails');
             let addUser = inviteModal.querySelector('#addUser');
             let userList = inviteModal.querySelector('#userList');
+            let addSuccess = inviteModal.querySelector('#addSuccess');
+            let addError = inviteModal.querySelector('#addError');
 
             // Check if input is empty to enable/disable add user button
             userEmails.addEventListener('input', function() {
@@ -95,42 +98,77 @@ define([
             // Click add user button
             addUser.addEventListener('click', function(event) {
                 event.preventDefault();
-                
-                // Get the emails and split them by comma or semicolon
-                let emails = userEmails.value.split(/,|;/);
-                
-                userEmails.value = '';
-                userEmails.dispatchEvent(new Event('input'));
 
-                emails.forEach(email => {
-                    email = email.trim().toLowerCase();
+                Ajax.call([{
+                    methodname: 'local_invites_check_email',
+                    args: {emails: userEmails.value},
+                    done: function(data) {
+                        data.valid.forEach(result => {
+                            if (that.invites.indexOf(result.email) == -1) {
+                                // Prepare the context data for the template
+                                const context = {
+                                    email: result.email,
+                                    name: result.name,
+                                };
+            
+                                Templates
+                                .render('local_invites/userinvite', context)
+                                .done(
+                                    function(newUser, js) {
+                                        // Append the user to the list
+                                        that.invites.push(result.email);
+                                        userList.appendChild(document.createRange().createContextualFragment(newUser));
+                                        that.updateStatus();
 
-                    if (that.invites.indexOf(email) == -1) {
-                        // Prepare the context data for the template
-                        const context = {
-                            name: "John Doe",
-                            email: email,
-                        };
-    
-                        Templates.render('local_invites/userinvite', context).done(function(newUser, js) {
-                            // Append the user to the list
-                            that.invites.push(email);
-                            that.updateStatus();
-                            userList.appendChild(document.createRange().createContextualFragment(newUser));
-
-                            // Add event listener to remove the user
-                            let userElement = userList.querySelector('li:last-child .delete-icon');
-                            userElement.addEventListener('click', function() {
-                                that.invites = that.invites.filter(e => e !== email);
-                                that.updateStatus();
-                                this.closest('li').remove();
-                            });
-                        }.bind(this)).fail(function(ex) {
-                            console.error('Failed to render template', ex);
+                                        // Add event listener to remove the user
+                                        let userElement = userList.querySelector('li:last-child .delete-icon');
+                                        userElement.addEventListener('click', function() {
+                                            that.invites = that.invites.filter(e => e !== result.email);
+                                            that.updateStatus();
+                                            this.closest('li').remove();
+                                        });
+                                    }.bind(this)
+                                )
+                                .fail(function(ex) {
+                                    console.error('Failed to render template', ex);
+                                });
+                            }
                         });
-                    }
-                });
-                
+
+                        // Notify about results
+                        if (data.valid.length > 0) {
+                            Str.get_string('validmessage', 'local_invites', data.valid.length)
+                            .done(function(message) {
+                                this.addSuccess.innerHTML = message;
+                                this.addSuccess.classList.remove('hidden');
+                                setTimeout(function() {
+                                    this.addSuccess.innerHTML = '';
+                                    this.addSuccess.classList.add('hidden');
+                                }.bind(this), 3000);
+                            })
+                            .fail(Notification.exception);
+                        }
+                        if (data.invalid.length > 0) {
+                            Str.get_string('invalidmessage', 'local_invites', data.invalid.map(e => e.email).join(', '))
+                            .done(function(message) {
+                                this.addError.innerHTML = message;
+                                this.addError.classList.remove('hidden');
+                                setTimeout(function() {
+                                    this.addError.innerHTML = '';
+                                    this.addError.classList.add('hidden');
+                                }.bind(this), 3000);
+                            })
+                            .fail(Notification.exception);
+                        }
+
+                        // Clear the input
+                        userEmails.value = '';
+                        userEmails.dispatchEvent(new Event('input'));
+
+                        that.updateStatus();
+                    }.bind(this),
+                    fail: Notification.exception
+                }]);
             });
         },
         updateStatus: function() {

@@ -18,3 +18,5 @@ $string['invitebody'] = 'You have been invited to join the course "{$a->course}"
 $string['send'] = 'Send invites';
 
 $string['invites:inviteusers'] = "Allows a user to access the invites interface";
+$string['validmessage'] = '{$a} email(s) added to the list.';
+$string['invalidmessage'] = 'The following addresses are invalid: {$a}';
