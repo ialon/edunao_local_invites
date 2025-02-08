@@ -1,0 +1,59 @@
+#userForm > div,
+#inviteFrom > div {
+    width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+#userForm div.with-border {
+    border: 1px solid #dee2e6;
+    border-radius: .50rem;
+}
+
+#userForm input {
+    border: none;
+    box-shadow: none;
+    outline: none;
+}
+
+#userForm button {
+    border-radius: 0;
+    padding: .375rem .75rem;
+}
+
+#userList {
+    list-style-type: none;
+    margin: 0;
+}
+
+#userList .invite-details div {
+    display: inline-block;
+}
+
+#userList .delete-icon {
+    cursor: pointer;
+    transform: translateY(-50%);
+}
+
+#userList .delete-icon:hover {
+    color: red;
+}
+
+#userList select {
+    width: auto;
+}
+
+#inviteMessage {
+    border: 1px solid #dee2e6;
+    border-radius: .50rem;
+    box-shadow: none;
+    outline: none;
+    margin: 20px 0;
+    height: 120px;
+}
+
+#inviteUsers {
+    border-radius: 0;
+    padding: .375rem .75rem;
+}

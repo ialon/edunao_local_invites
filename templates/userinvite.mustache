@@ -1,0 +1,19 @@
+<li data-email="{{email}}">
+    <div class="d-flex align-items-center justify-content-between mb-2 w-100">
+        <div class="mr-2 invite-details">
+            <div class="mr-2 delete-icon"><i class="fa fa-remove"></i></div>
+            <div>
+                {{#name}}
+                    <b>{{ name }} </b> <br> {{ email }}
+                {{/name}}
+                {{^name}}
+                    <b>{{ email }}</b>
+                {{/name}}
+            </div>
+        </div>
+        <select class="form-control mr-2">
+            <option value="teacher">Teacher</option>
+            <option value="student">Student</option>
+        </select>
+    </div>
+</li>
