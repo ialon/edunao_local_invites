@@ -12,8 +12,9 @@
             </div>
         </div>
         <select class="form-control mr-2">
-            <option value="teacher">Teacher</option>
-            <option value="student">Student</option>
+            {{#roles}}
+                <option value="{{id}}" {{#isstudent}}selected{{/isstudent}}>{{name}}</option>
+            {{/roles}}
         </select>
     </div>
 </li>

@@ -6,9 +6,10 @@ define([
     'core/str',
 ], function($, Ajax, Notification, Templates, Str) {
     return {
-        init: function(courseID, inviteBody) {
+        init: function(courseID, inviteBody, roles) {
             this.courseID = courseID;
             this.inviteBody = inviteBody;
+            this.roles = roles;
             this.invites = [];
 
             if (document.readyState === 'loading') {
@@ -109,6 +110,7 @@ define([
                                 const context = {
                                     email: result.email,
                                     name: result.name,
+                                    roles: that.roles,
                                 };
             
                                 Templates
