@@ -30,6 +30,7 @@ class external extends external_api {
      */
     public static function validate_email_parameters() {
         return new external_function_parameters([
+            'courseid' => new external_value(PARAM_INT, 'Course ID.'),
             'emails' => new external_value(PARAM_RAW, 'Comma or semicolon separated list of emails.')
         ]);
     }
@@ -38,9 +39,10 @@ class external extends external_api {
      * Returns an array with results of email validation, id, email and first and last name if user already exists.
      *
      * @param string $emails Comma or semicolon separated list of emails.
+     * @param int $courseid Course ID.
      * @return array
      */
-    public static function validate_email(string $emails) {
+    public static function validate_email(string $emails, int $courseid) {
         global $DB;
 
         $results = [
@@ -60,6 +62,11 @@ class external extends external_api {
             $result->valid = filter_var($email, FILTER_VALIDATE_EMAIL) !== false;
             $result->userid = null;
             $result->name = null;
+
+            // Invalid because he has already been invited.
+            if ($exists = $DB->get_record('local_invites', ['email' => $email, 'courseid' => $courseid])) {
+                $result->valid = false;
+            }
 
             if ($result->valid) {
                 if ($user = $DB->get_record('user', array('email' => $email))) {
@@ -105,53 +112,83 @@ class external extends external_api {
      */
     public static function send_invites_parameters() {
         return new external_function_parameters([
-            'emails' => new external_value(PARAM_RAW, 'Comma or semicolon separated list of emails.')
+            'courseid' => new external_value(PARAM_INT, 'Course ID.'),
+            'invitations' => new external_multiple_structure(
+                new external_single_structure([
+                    'email'  => new external_value(PARAM_NOTAGS, 'User email'),
+                    'roleid' => new external_value(PARAM_INT, 'ID of role to assign'),
+                ]),
+            ),
+            'message' => new external_value(PARAM_TEXT, 'Message to send.')
         ]);
     }
 
     /**
      * Returns an array with results of email sending and email.
      *
-     * @param string $emails Comma or semicolon separated list of emails.
-     * @return array
+     * @param int $courseid Course ID.
+     * @param array $invitations Objects with email and role
+     * @param string $message Message body.
+     * @return object
      */
-    public static function send_invites(string $emails) {
-        global $DB;
+    public static function send_invites(int $courseid, array $invitations, string $message) {
+        global $DB, $USER, $PAGE;
 
-        $results = [];
+        $PAGE->set_context(\context_system::instance());
 
-        // Separate emails by comma or semicolon.
-        $emails = preg_split('/[,;]+/', $emails);
+        $transaction = $DB->start_delegated_transaction();
 
-        foreach ($emails as $email) {
-            $email = trim($email);
+        foreach ($invitations as &$invitation) {
+            $invitation['email'] = trim($invitation['email']);
+            $invitation['courseid'] = $courseid;
+            $invitation['userid'] = null;
+            $invitation['timecreated'] = time();
+            $invitation['token'] = hash('sha256', $invitation['email'] . $courseid . $invitation['timecreated']);
 
-            $result = new \stdClass();
-            $result->email = $email;
-            $result->sent = false;
-
-            if (filter_var($email, FILTER_VALIDATE_EMAIL) !== false) {
-                // TOOD: Send email here.
-                $result->sent = true;
+            if (filter_var($invitation['email'], FILTER_VALIDATE_EMAIL) !== false) {
+                if ($user = $DB->get_record('user', array('email' => $invitation['email']))) {
+                    $invitation['userid'] = $user->id;
+                }
+            } else {
+                $error = new \Exception('Invalid email. Somebody changed it in the client side.');
+                $DB->rollback_delegated_transaction($transaction, $error);
+                return (object) ['success' => false, 'message' => get_string('failuretosend', 'local_invites')];
             }
 
-            $results[] = $result;
+            $DB->insert_record('local_invites', $invitation);
         }
 
-        return $results;
+        $transaction->allow_commit();
+
+        // Generate invitations
+        foreach ($invitations as $invitation) {
+            // To and From
+            $tempuser = $DB->get_record('user', array('id' => $USER->id), '*', MUST_EXIST);
+            $tempuser->email = $invitation['email'];
+            $noreplyuser = \core_user::get_noreply_user();
+
+            // Subject and Body
+            $subject = get_string('invitesubject', 'local_invites');
+            $url = new \moodle_url('/local/invites/accept.php', ['token' => $invitation['token']]);
+            $footer = get_string('invitefooter', 'local_invites', ['url' => $url]);
+            $messagetext = $message . $footer;
+            $messagehtml = text_to_html($messagetext, false, false, true);
+            
+            email_to_user($tempuser, $noreplyuser, $subject, $messagetext, $messagehtml);
+        }
+
+        return (object) ['success' => true];
     }
 
     /**
-     * Returns an array with results of email validation, id, email and first and last name if user already exists.
+     * Return succes or failure
      *
-     * @return external_multiple_structure
+     * @return external_single_structure
      */
     public static function send_invites_returns() {
-        return new external_multiple_structure(
-            new external_single_structure([
-                'email'  => new external_value(PARAM_NOTAGS, 'Email'),
-                'sent' => new external_value(PARAM_BOOL, 'Email is sent')
-            ])
-        );
+        return new external_single_structure([
+            'success' => new external_value(PARAM_BOOL, 'Email were sent'),
+            'message' => new external_value(PARAM_TEXT, 'Error Message', VALUE_OPTIONAL)
+        ]);
     }
 }

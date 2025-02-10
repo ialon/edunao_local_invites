@@ -86,6 +86,7 @@ define([
             let userList = inviteModal.querySelector('#userList');
             let addSuccess = inviteModal.querySelector('#addSuccess');
             let addError = inviteModal.querySelector('#addError');
+            let inviteUsers = inviteModal.querySelector('#inviteUsers');
 
             // Check if input is empty to enable/disable add user button
             userEmails.addEventListener('input', function() {
@@ -102,7 +103,10 @@ define([
 
                 Ajax.call([{
                     methodname: 'local_invites_check_email',
-                    args: {emails: userEmails.value},
+                    args: {
+                        courseid: that.courseID,
+                        emails: userEmails.value
+                    },
                     done: function(data) {
                         data.valid.forEach(result => {
                             if (that.invites.indexOf(result.email) == -1) {
@@ -166,6 +170,48 @@ define([
                         // Clear the input
                         userEmails.value = '';
                         userEmails.dispatchEvent(new Event('input'));
+
+                        that.updateStatus();
+                    }.bind(this),
+                    fail: Notification.exception
+                }]);
+            });
+
+            // Click send invites button
+            inviteUsers.addEventListener('click', function(event) {
+                event.preventDefault();
+
+                let invitations = [];
+                let users = userList.querySelectorAll('li');
+                users.forEach(user => {
+                    let email = user.getAttribute('data-email');
+                    let roleid = user.querySelector('select').value;
+                    invitations.push({email: email, roleid: parseInt(roleid, 10)});
+                });
+
+                Ajax.call([{
+                    methodname: 'local_invites_send_invites',
+                    args: {
+                        courseid: that.courseID,
+                        invitations: invitations,
+                        message: inviteModal.querySelector('#inviteMessage').value,
+                    },
+                    done: function(data) {
+                        if (data.success) {
+                            // Empty the user list and reset the invites array
+                            userList.innerHTML = '';
+                            that.invites = [];
+
+                            // Close the modal
+                            $('#inviteModal').modal('hide');
+                        } else {
+                            this.addError.innerHTML = data.message;
+                            this.addError.classList.remove('hidden');
+                            setTimeout(function() {
+                                this.addError.innerHTML = '';
+                                this.addError.classList.add('hidden');
+                            }.bind(this), 3000);
+                        }
 
                         that.updateStatus();
                     }.bind(this),
