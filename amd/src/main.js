@@ -6,10 +6,11 @@ define([
     'core/str',
 ], function($, Ajax, Notification, Templates, Str) {
     return {
-        init: function(courseID, inviteBody, roles) {
+        init: function(courseID, inviteBody, roles, remaining) {
             this.courseID = courseID;
             this.inviteBody = inviteBody;
             this.roles = roles;
+            this.remaining = remaining;
             this.invites = [];
 
             if (document.readyState === 'loading') {
@@ -71,10 +72,14 @@ define([
 
             // Check if input is empty to enable/disable add user button
             userEmails.addEventListener('input', function() {
-                if (userEmails.value.trim() === '') {
-                    addUser.disabled = true;
-                } else {
-                    addUser.disabled = false;
+                let currentRemaining = this.remaining - this.invites.length;
+
+                // Enable/disable the add user button
+                addUser.disabled = false;
+                if (currentRemaining > 0) {
+                    if (userEmails.value.trim() === '') {
+                        addUser.disabled = true;
+                    }
                 }
             });
 
@@ -193,6 +198,7 @@ define([
         
                                     // Close the modal
                                     $('#inviteModal').modal('hide');
+                                    that.updateStatus();
                                 }.bind(this), 3000);
                             })
                             .fail(Notification.exception);
@@ -210,12 +216,34 @@ define([
                     fail: Notification.exception
                 }]);
             });
+
+            that.updateStatus();
         },
         updateStatus: function() {
+            let remainingInvites = inviteModal.querySelector('.remaining-invites');
             let inviteDetails = inviteModal.querySelector('#inviteDetails');
             let inviteUsers = inviteModal.querySelector('#inviteUsers');
+            let addUser = inviteModal.querySelector('#addUser');
 
-            if (this.invites.length === 0) {
+            let invites = this.invites.length;
+            let currentRemaining = this.remaining - invites;
+
+            // Update the remaining invites message
+            Str.get_string('remaininginvites', 'local_invites', currentRemaining)
+            .done(function(message) {
+                remainingInvites.innerHTML = message;
+            })
+            .fail(Notification.exception);
+
+            // Enable/disable the add user button
+            if (currentRemaining == 0) {
+                addUser.disabled = true;
+            } else {
+                addUser.disabled = false;
+            }
+
+            // Show/hide the invite details and invite users button
+            if (invites === 0) {
                 inviteDetails.classList.add('hidden');
                 inviteUsers.disabled = true;
             } else {

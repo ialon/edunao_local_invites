@@ -33,7 +33,10 @@
 
 #userList .delete-icon {
     cursor: pointer;
-    transform: translateY(-50%);
+}
+
+#userList .delete-icon.has-name {
+    transform: translateY(-12px);
 }
 
 #userList .delete-icon:hover {

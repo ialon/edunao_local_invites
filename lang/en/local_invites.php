@@ -12,6 +12,7 @@ $string['invite'] = 'Invite to course';
 $string['invites:inviteusers'] = "Allows a user to access the invites interface";
 
 // Modal window
+$string['remaininginvites'] = 'Remaining invites: {$a}';
 $string['useremail'] = 'Email addresses separated by , or ;';
 $string['adduser'] = 'Add';
 $string['userstoinvite'] = 'Invitations to be sent';
@@ -21,6 +22,7 @@ $string['send'] = 'Send invites';
 // Feedback
 $string['validmessage'] = '{$a} email(s) added to the list.';
 $string['invalidmessage'] = 'The following addresses are invalid or have already been invited: {$a}';
+$string['exceededlimit'] = 'You have exceeded the limit of invites you can send.';
 $string['failuretosend'] = 'Failure to send invites. Try again later or contact the administrator.';
 $string['invitationssent'] = 'Invitations sent successfully!';
 

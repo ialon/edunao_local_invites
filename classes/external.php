@@ -145,6 +145,31 @@ class external extends external_api {
 
         $PAGE->set_context(\context_system::instance());
 
+        if (!is_siteadmin()) {
+            $context = \context_course::instance($courseid);
+
+            // Get count of enrolled users, pending invites and invites created in the last 24 hours.
+            $enrolled = count(get_enrolled_users($context, '', 0, 'u.*', null, 0, 0, true));
+            $pending = $DB->count_records('local_invites', ['courseid' => $courseid]);
+            $recent = $DB->count_records_sql("SELECT COUNT(*) FROM {local_invites} WHERE courseid = ? AND timecreated > ?", [$courseid, time() - DAYSECS]);
+
+            // Calculate remaining invites.
+            $maxenrolled = 25;  // Maximum number of enrolled users.
+            $maxrecent = 5;     // Maximum number of invites created in the last 24 hours.
+    
+            $remaining = $maxenrolled - $enrolled - $pending;
+    
+            if ($recent >= $maxrecent) {
+                $remaining = 0;
+            } else {
+                $remaining = min($remaining, $maxrecent - $recent);
+            }
+
+            if ($remaining < count($invitations)) {
+                return (object) ['success' => false, 'message' => get_string('exceededlimit', 'local_invites')];
+            }
+        }
+
         $transaction = $DB->start_delegated_transaction();
 
         foreach ($invitations as &$invitation) {
