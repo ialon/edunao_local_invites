@@ -13,43 +13,22 @@ define([
             this.invites = [];
 
             if (document.readyState === 'loading') {
-                document.addEventListener('DOMContentLoaded', this.moveMenuItem.bind(this));
+                document.addEventListener('DOMContentLoaded', this.addInviteListener.bind(this));
             } else {
-                this.moveMenuItem();
+                this.addInviteListener();
             }
         },
-        moveMenuItem: function() {
-            let inviteItemLink = document.querySelector('li[data-key="inviteusers"] a');
-            if (! inviteItemLink) {
-                return;
-            }
+        addInviteListener: function() {
+            let that = this;
 
-            // Clone the invite link.
-            let inviteItemClone = inviteItemLink.cloneNode(true);
-            // Remove role and tabindex attributes
-            inviteItemClone.removeAttribute('role');
-            inviteItemClone.removeAttribute('tabindex');
-            // Modify the cloned link to be an info button with the fa-user-plus icon.
-            inviteItemClone.classList.remove('dropdown-item');
-            inviteItemClone.classList.add('btn', 'btn-sm', 'btn-info', 'd-flex', 'align-items-center', 'ml-3');
-            inviteItemClone.style.height = 'fit-content';
-            inviteItemClone.innerHTML = '<i class="fa fa-user-plus mr-2"></i> Send invites';
+            document.addEventListener('shareModalLoaded', function() {
+                let inviteUsers = document.getElementById('openInviteUsers');
 
-            // Find the course title element and insert the cloned link next to it.
-            let courseTitle = document.querySelector('.page-header-headings');
-            if (courseTitle) {
-                courseTitle.parentNode.insertBefore(inviteItemClone, courseTitle.nextSibling);
-            }
-
-            // Prevent default action and show modal.
-            inviteItemClone.addEventListener('click', (event) => {
-                event.preventDefault();
-                this.showModal();
-            });
-            // Prevent default action and show modal.
-            inviteItemLink.addEventListener('click', (event) => {
-                event.preventDefault();
-                this.showModal();
+                // Prevent default action and show modal.
+                inviteUsers.addEventListener('click', (event) => {
+                    event.preventDefault();
+                    that.showModal();
+                });
             });
         },
         showModal: function() {
@@ -57,6 +36,7 @@ define([
             let existingModal = document.getElementById('inviteModal');
             if (existingModal) {
                 $('#inviteModal').modal('show');
+                document.querySelector('.modal-backdrop:last-of-type').setAttribute('style', 'z-index: 1060;');
                 return;
             }
 
@@ -71,6 +51,7 @@ define([
                 document.body.insertAdjacentHTML('beforeend', html);
                 Templates.runTemplateJS(js);
                 $('#inviteModal').modal('show');
+                document.querySelector('.modal-backdrop:last-of-type').setAttribute('style', 'z-index: 1060;');
 
                 // Add modal event listeners
                 this.addModalListeners();
