@@ -9,7 +9,7 @@
 require_once(__DIR__ . '/../../config.php');
 require_once($CFG->dirroot . "/user/lib.php");
 
-global $DB, $SESSION;
+global $CFG, $DB;
 
 $token = required_param('token', PARAM_TEXT);
 
@@ -74,6 +74,12 @@ $manual = $DB->get_record('enrol', array('courseid' => $course->id, 'enrol' => '
 $enrol->enrol_user($manual, $user->id, $role->id);
 
 // Redirect to courseurl
-$courseurl = new moodle_url('/course/view.php', ['id' => $course->id]);
-$SESSION->wantsurl = $courseurl->out();
-redirect($courseurl);
+$redirecturl = new moodle_url('/course/view.php', ['id' => $course->id]);
+
+// Except if user is fully set up
+$usernotfullysetup = user_not_fully_set_up($user, true);
+if ($usernotfullysetup) {
+    $redirecturl = new moodle_url('/local/invites/edit.php', ['course' => $course->id]);
+}
+
+redirect($redirecturl);
