@@ -198,12 +198,23 @@ define([
                     },
                     done: function(data) {
                         if (data.success) {
-                            // Empty the user list and reset the invites array
-                            userList.innerHTML = '';
-                            that.invites = [];
+                            Str.get_string('invitationssent', 'local_invites')
+                            .done(function(message) {
+                                this.addSuccess.innerHTML = message;
+                                this.addSuccess.classList.remove('hidden');
+                                setTimeout(function() {
+                                    this.addSuccess.innerHTML = '';
+                                    this.addSuccess.classList.add('hidden');
 
-                            // Close the modal
-                            $('#inviteModal').modal('hide');
+                                    // Empty the user list and reset the invites array
+                                    userList.innerHTML = '';
+                                    that.invites = [];
+        
+                                    // Close the modal
+                                    $('#inviteModal').modal('hide');
+                                }.bind(this), 3000);
+                            })
+                            .fail(Notification.exception);
                         } else {
                             this.addError.innerHTML = data.message;
                             this.addError.classList.remove('hidden');

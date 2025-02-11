@@ -38,13 +38,14 @@ class external extends external_api {
     /**
      * Returns an array with results of email validation, id, email and first and last name if user already exists.
      *
-     * @param string $emails Comma or semicolon separated list of emails.
      * @param int $courseid Course ID.
+     * @param string $emails Comma or semicolon separated list of emails.
      * @return array
      */
-    public static function validate_email(string $emails, int $courseid) {
+    public static function validate_email(int $courseid, string $emails) {
         global $DB;
 
+        $context = \context_course::instance($courseid);
         $results = [
             'valid' => [],
             'invalid' => []
@@ -72,6 +73,14 @@ class external extends external_api {
                 if ($user = $DB->get_record('user', array('email' => $email))) {
                     $result->userid = $user->id;
                     $result->name = fullname($user);
+                }
+                if ($result->userid) {
+                    // Mark as invalid if user is already enrolled.
+                    if (is_enrolled($context, $result->userid)) {
+                        $result->valid = false;
+                        $results['invalid'][] = $result;
+                        continue;
+                    }
                 }
                 $results['valid'][] = $result;
             } else {
