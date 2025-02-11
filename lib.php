@@ -11,6 +11,10 @@ defined('MOODLE_INTERNAL') || die();
 require_once("$CFG->dirroot/enrol/locallib.php");
 
 function local_invites_extend_sharecourse(stdClass $course, $context) {
+    if (!has_capability('local/invites:inviteusers', $context)) {
+        return '';
+    }
+
     global $DB, $PAGE, $USER;
 
     // Get list of assignable roles.
