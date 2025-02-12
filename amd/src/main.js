@@ -72,7 +72,7 @@ define([
 
             // Check if input is empty to enable/disable add user button
             userEmails.addEventListener('input', function() {
-                let currentRemaining = this.remaining - this.invites.length;
+                let currentRemaining = this.remaining - that.invites.length;
 
                 // Enable/disable the add user button
                 addUser.disabled = false;
