@@ -9,7 +9,10 @@
 require_once(__DIR__ . '/../../config.php');
 require_once($CFG->dirroot . "/user/lib.php");
 
-global $CFG, $DB;
+global $CFG, $DB, $PAGE;
+
+$PAGE->set_url(new moodle_url('/local/invites/accept.php'));
+$PAGE->set_context(context_system::instance());
 
 $token = required_param('token', PARAM_TEXT);
 
