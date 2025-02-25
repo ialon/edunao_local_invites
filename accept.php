@@ -46,7 +46,7 @@ if (!$user) {
     $user->email = $invite->email;
     $user->username = $invite->email;
 
-    $user->id = user_create_user($user, true, false);
+    $user->id = user_create_user($user, true, true);
 
     // Reload from DB.
     $user = $DB->get_record('user', array('id' => $user->id));
