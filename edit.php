@@ -76,12 +76,6 @@ if ($usernew = $userform->get_data()) {
                 throw new \moodle_exception('cannotupdatepasswordonextauth', '', '', $usernew->auth);
             }
             unset_user_preference('create_password', $usernew); // Prevent cron from generating the password.
-
-            if (!empty($CFG->passwordchangelogout)) {
-                // We can use SID of other user safely here because they are unique,
-                // the problem here is we do not want to logout admin here when changing own password.
-                \core\session\manager::kill_user_sessions($usernew->id, session_id());
-            }
         }
     }
 
