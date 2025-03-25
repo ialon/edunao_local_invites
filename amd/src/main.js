@@ -13,6 +13,10 @@ define([
             this.remaining = remaining;
             this.invites = [];
 
+            this.inviteModal = null;
+            this.addSuccess = null;
+            this.addError = null;
+
             if (document.readyState === 'loading') {
                 document.addEventListener('DOMContentLoaded', this.addInviteListener.bind(this));
             } else {
@@ -56,19 +60,19 @@ define([
 
                 // Add modal event listeners
                 this.addModalListeners();
-            }.bind(this)).fail(function(ex) {
-                console.error('Failed to render template', ex);
-            });
+            }.bind(this))
+            .fail(Notification.exception);
         },
         addModalListeners: function() {
+            this.inviteModal = document.getElementById('inviteModal');
+            this.addSuccess = this.inviteModal.querySelector('#addSuccess');
+            this.addError = this.inviteModal.querySelector('#addError');
+
             let that = this;
-            let inviteModal = document.getElementById('inviteModal');
-            let userEmails = inviteModal.querySelector('#userEmails');
-            let addUser = inviteModal.querySelector('#addUser');
-            let userList = inviteModal.querySelector('#userList');
-            let addSuccess = inviteModal.querySelector('#addSuccess');
-            let addError = inviteModal.querySelector('#addError');
-            let inviteUsers = inviteModal.querySelector('#inviteUsers');
+            let userEmails = this.inviteModal.querySelector('#userEmails');
+            let addUser = this.inviteModal.querySelector('#addUser');
+            let userList = this.inviteModal.querySelector('#userList');
+            let inviteUsers = this.inviteModal.querySelector('#inviteUsers');
 
             // Check if input is empty to enable/disable add user button
             userEmails.addEventListener('input', function() {
@@ -102,11 +106,11 @@ define([
                                     name: result.name,
                                     roles: that.roles,
                                 };
-            
+
                                 Templates
                                 .render('local_invites/userinvite', context)
                                 .done(
-                                    function(newUser, js) {
+                                    function(newUser) {
                                         // Append the user to the list
                                         that.invites.push(result.email);
                                         userList.appendChild(document.createRange().createContextualFragment(newUser));
@@ -121,9 +125,7 @@ define([
                                         });
                                     }.bind(this)
                                 )
-                                .fail(function(ex) {
-                                    console.error('Failed to render template', ex);
-                                });
+                                .fail(Notification.exception);
                             }
                         });
 
@@ -180,7 +182,7 @@ define([
                     args: {
                         courseid: that.courseID,
                         invitations: invitations,
-                        message: inviteModal.querySelector('#inviteMessage').value,
+                        message: that.inviteModal.querySelector('#inviteMessage').value,
                     },
                     done: function(data) {
                         if (data.success) {
@@ -195,7 +197,7 @@ define([
                                     // Empty the user list and reset the invites array
                                     userList.innerHTML = '';
                                     that.invites = [];
-        
+
                                     // Close the modal
                                     $('#inviteModal').modal('hide');
                                     that.updateStatus();
@@ -220,10 +222,10 @@ define([
             that.updateStatus();
         },
         updateStatus: function() {
-            let remainingInvites = inviteModal.querySelector('.remaining-invites');
-            let inviteDetails = inviteModal.querySelector('#inviteDetails');
-            let inviteUsers = inviteModal.querySelector('#inviteUsers');
-            let addUser = inviteModal.querySelector('#addUser');
+            let remainingInvites = this.inviteModal.querySelector('.remaining-invites');
+            let inviteDetails = this.inviteModal.querySelector('#inviteDetails');
+            let inviteUsers = this.inviteModal.querySelector('#inviteUsers');
+            let addUser = this.inviteModal.querySelector('#addUser');
 
             let invites = this.invites.length;
             let currentRemaining = this.remaining - invites;
